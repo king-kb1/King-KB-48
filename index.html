@@ -1,0 +1,234 @@
+<!DOCTYPE html><html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>King KB — Game Dadu (Poin)</title>
+<style>
+:root{--bg:#020617;--card:#0b1220;--accent:#ef4444;--accent2:#22c55e;--amber:#f59e0b;--txt:#e5e7eb}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:linear-gradient(135deg,#020617,#0b1220);font-family:Impact,Arial,sans-serif;color:var(--txt);display:flex;justify-content:center}
+.container{width:100%;max-width:1000px;padding:16px}
+.card{background:rgba(11,18,32,.95);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 14px 40px rgba(0,0,0,.6)}
+.huge{font-size:40px;font-weight:900}
+.big{font-size:22px;font-weight:900}
+.btn{padding:14px 18px;border-radius:16px;border:none;font-weight:900;cursor:pointer;transition:.15s transform,.15s filter}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.btn.red{background:linear-gradient(45deg,#ef4444,#fb7185)}
+.btn.green{background:linear-gradient(45deg,#22c55e,#86efac);color:#052e16}
+.btn.amber{background:linear-gradient(45deg,#f59e0b,#fde047);color:#111}
+.btn.gray{background:#374151;color:#e5e7eb}
+.btn.active{outline:3px solid #fff; box-shadow:0 0 18px rgba(255,255,255,.7)}
+.pulse{animation:pulse .6s ease-out}
+@keyframes pulse{0%{box-shadow:0 0 0 rgba(0,0,0,0)}50%{box-shadow:0 0 22px rgba(34,197,94,.9)}100%{box-shadow:0 0 0 rgba(0,0,0,0)}}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.col{flex:1}
+input,textarea{width:100%;padding:14px;border-radius:14px;border:1px solid #374151;background:#020617;color:#e5e7eb;font-weight:900;font-size:16px}
+.hidden{display:none}
+.center{text-align:center}
+.diceWrap{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.dice{height:78px;border-radius:18px;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;animation:spin .6s linear}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.footer{opacity:.85;font-size:14px}
+.ruleBox{background:#020617;border:1px dashed #374151;border-radius:14px;padding:12px;margin-top:12px}
+.tag{display:inline-block;padding:6px 10px;border-radius:999px;background:#111827;border:1px solid #374151;margin-right:6px}
+.list{max-height:160px;overflow:auto;border:1px solid #374151;border-radius:12px;padding:8px}
+.item{display:flex;justify-content:space-between;border-bottom:1px dashed #374151;padding:6px 0}
+.item:last-child{border-bottom:none}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center}
+.modal .card{max-width:420px;width:92%}
+/* Loading & Toast */
+.loading{position:fixed;inset:0;background:rgba(2,6,23,.75);display:flex;align-items:center;justify-content:center;z-index:50}
+.spinner{width:72px;height:72px;border-radius:50%;border:8px solid #1f2937;border-top-color:#f59e0b;animation:spin 1s linear infinite}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#022c22;color:#ecfeff;padding:12px 16px;border-radius:14px;font-weight:900;box-shadow:0 10px 30px rgba(0,0,0,.5);z-index:60}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card center">
+    <div class="huge">🎲 KING KB</div>
+    <div class="footer">Multi-user • Save data • WebView-ready</div>
+    <div class="footer">Top up poin via WhatsApp: <b>+62 896-6889-4865</b></div>
+  </div>  <!-- LOGIN / REGISTER -->  <div id="auth" class="card">
+    <div class="row">
+      <div class="col">
+        <div class="big">Login</div>
+        <input id="loginUser" placeholder="Username" />
+        <input id="loginPass" type="password" placeholder="Password" />
+        <button class="btn red" onclick="login()">LOGIN</button>
+      </div>
+      <div class="col">
+        <div class="big">Daftar</div>
+        <input id="regUser" placeholder="Username (unik)" />
+        <input id="regPass" type="password" placeholder="Password" />
+        <button class="btn amber" onclick="register()">DAFTAR</button>
+      </div>
+    </div>
+    <div class="center" style="margin-top:10px">
+      <button class="btn gray" onclick="showAdmin()">ADMIN LOGIN</button>
+    </div>
+  </div>  <!-- ADMIN LOGIN -->  <div id="adminAuth" class="card hidden">
+    <div class="big">👑 Admin Login</div>
+    <input id="adminUser" placeholder="Admin Username" />
+    <input id="adminPass" type="password" placeholder="Admin Password" />
+    <button class="btn red" onclick="adminLogin()">MASUK ADMIN</button>
+  </div>  <!-- GAME -->  <div id="game" class="card hidden">
+    <div class="row">
+      <div class="col"><div class="big">User: <span id="uName"></span></div></div>
+      <div class="col center"><div class="big">Poin: <span id="uSaldo">0</span></div></div>
+      <div class="col center"><button class="btn gray" onclick="logout()">Logout</button></div>
+    </div><div class="row" style="margin-top:12px">
+  <button id="btnK" class="btn green" onclick="pick('K')">KECIL</button>
+  <button id="btnB" class="btn red" onclick="pick('B')">BESAR</button>
+  <span id="pickHint" class="tag">Belum pilih</span>
+</div>
+
+<div class="center" style="margin:10px 0">Nominal (min 100 poin)</div>
+<input id="bet" type="number" min="100" value="100" />
+
+<div class="row" style="margin-top:8px">
+  <button class="btn amber col" onclick="openTopup()">TOP UP</button>
+  <button class="btn red col" onclick="roll()">LEM PAR</button>
+</div>
+
+<div id="dice" class="diceWrap" style="margin-top:12px"></div>
+<div id="result" class="center big" style="margin-top:8px">—</div>
+
+<div class="row">
+  <div class="col">
+    <div class="ruleBox">
+      <b>Rules</b>
+      <ol>
+        <li>Pilih Kecil / Besar</li>
+        <li>Isi nominal (min 100 poin)</li>
+        <li>Lempar dadu & tunggu hasil</li>
+      </ol>
+    </div>
+  </div>
+  <div class="col">
+    <div class="ruleBox">
+      <b>History Main</b>
+      <div id="playHist" class="list"></div>
+    </div>
+    <div class="ruleBox" style="margin-top:8px">
+      <b>History Top Up</b>
+      <div id="topHist" class="list"></div>
+
+</div>
+</div>
+</div>
+</div><!-- LOADING --><div id="loading" class="loading hidden"><div class="spinner"></div></div>
+<!-- TOAST -->
+<div id="toast" class="toast hidden"></div>
+  </div>  <!-- ADMIN PANEL -->  <div id="admin" class="card hidden">
+    <div class="big">👑 Admin Panel</div>
+    <div class="row">
+      <div class="col">
+        <div>Tambah poin user</div>
+        <input id="topUser" placeholder="Username" />
+        <input id="topVal" type="number" placeholder="Jumlah poin" />
+        <button class="btn amber" onclick="topupAdmin()">TOP UP</button>
+      </div>
+      <div class="col">
+        <div>Win rate global (%)</div>
+        <input id="wr" type="number" min="0" max="100" />
+        <button class="btn red" onclick="setWR()">SET</button>
+      </div>
+    </div>
+    <div class="ruleBox" style="margin-top:10px">
+      <b>Request Top Up</b>
+      <div id="reqList" class="list"></div>
+    </div>
+  </div>
+</div><!-- TOP UP MODAL --><div id="topupModal" class="modal hidden">
+  <div class="card">
+    <div class="big center">Request Top Up Poin</div>
+    <input id="reqAmount" type="number" placeholder="Nominal poin" />
+    <textarea id="reqNote" placeholder="Catatan (opsional)"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="btn gray col" onclick="closeTopup()">Batal</button>
+      <button class="btn amber col" onclick="sendRequest()">Kirim</button>
+    </div>
+    <div class="footer center" style="margin-top:6px">Admin akan memproses via WhatsApp</div>
+    <div class="center" style="margin-top:8px">
+      <a class="btn green" href="https://wa.me/6289668894865" target="_blank">CHAT ADMIN WA</a>
+    </div>
+  </div>
+</div><script>
+// ===== ADMIN CREDENTIALS =====
+const ADMIN_U='raja123raja';
+const ADMIN_P='amin1';
+
+let users=JSON.parse(localStorage.getItem('users')||'{}');
+let reqs=JSON.parse(localStorage.getItem('reqs')||'[]');
+let current=null; let picked=null; let winRate=Number(localStorage.getItem('wr')||50);
+
+function save(){localStorage.setItem('users',JSON.stringify(users)); localStorage.setItem('wr',winRate); localStorage.setItem('reqs',JSON.stringify(reqs))}
+
+function register(){const u=regUser.value.trim(), p=regPass.value.trim(); if(!u||!p||users[u]) return alert('Username tidak valid / sudah ada'); users[u]={pass:p,saldo:0,plays:[],tops:[]}; save(); alert('Daftar berhasil')}
+function login(){const u=loginUser.value.trim(), p=loginPass.value.trim(); if(!users[u]||users[u].pass!==p) return alert('Login gagal'); current=u; auth.classList.add('hidden'); game.classList.remove('hidden'); uName.textContent=u; uSaldo.textContent=users[u].saldo; renderPlayHist(); renderTopHist(); flushNotifs()}
+function logout(){current=null; game.classList.add('hidden'); auth.classList.remove('hidden')}
+function showAdmin(){auth.classList.add('hidden'); adminAuth.classList.remove('hidden')}
+function adminLogin(){if(adminUser.value===ADMIN_U && adminPass.value===ADMIN_P){adminAuth.classList.add('hidden'); admin.classList.remove('hidden'); renderReqs()} else alert('Admin salah')}
+
+function pick(v){picked=v; btnK.classList.toggle('active',v==='K'); btnB.classList.toggle('active',v==='B'); const el=v==='K'?btnK:btnB; el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); pickHint.textContent = v==='K' ? 'Kecil dipilih' : 'Besar dipilih'}
+
+function roll(){
+  if(!picked) return alert('Pilih dulu');
+  const b=Number(bet.value||0); if(b<100) return alert('Min 100');
+  if(users[current].saldo<b) return alert('Poin kurang');
+  loading.classList.remove('hidden');
+  // prepare dice elements
+  dice.innerHTML=''; const els=[];
+  for(let i=0;i<6;i++){const d=document.createElement('div'); d.className='dice'; d.textContent='?'; dice.appendChild(d); els.push(d)}
+  // animate spin
+  let t=0; const spinIv=setInterval(()=>{
+    els.forEach(d=>d.textContent=Math.floor(Math.random()*6)+1);
+    t+=100; if(t>=800){ clearInterval(spinIv);
+      const finals=els.map(()=>Math.floor(Math.random()*6)+1);
+      els.forEach((d,i)=>d.textContent=finals[i]);
+      const win=Math.random()*100<winRate; const delta = win? Math.floor(1.5*b) : -Math.floor(1.5*b);
+      users[current].saldo=Math.max(0, users[current].saldo+delta);
+      users[current].plays.unshift({t:Date.now(), pick:picked, bet:b, res:win?'MENANG':'KALAH', delta});
+      save(); uSaldo.textContent=users[current].saldo; result.textContent= win?'MENANG':'KALAH';
+      picked=null; btnK.classList.remove('active'); btnB.classList.remove('active'); renderPlayHist();
+      loading.classList.add('hidden');
+    }
+  },100);
+}{
+  if(!picked) return alert('Pilih dulu');
+  const b=Number(bet.value||0); if(b<100) return alert('Min 100');
+  if(users[current].saldo<b) return alert('Poin kurang');
+  dice.innerHTML=''; for(let i=0;i<6;i++){const v=Math.floor(Math.random()*6)+1; const d=document.createElement('div'); d.className='dice'; d.textContent=v; dice.appendChild(d)}
+  const win=Math.random()*100<winRate; const delta = win? Math.floor(1.5*b) : -Math.floor(1.5*b);
+  users[current].saldo=Math.max(0, users[current].saldo+delta);
+  users[current].plays.unshift({t:Date.now(), pick:picked, bet:b, res:win?'MENANG':'KALAH', delta});
+  save(); uSaldo.textContent=users[current].saldo; result.textContent= win?'MENANG':'KALAH'; picked=null; btnK.classList.remove('active'); btnB.classList.remove('active'); renderPlayHist()
+}
+
+function renderPlayHist(){const box=playHist; box.innerHTML=''; (users[current].plays||[]).slice(0,10).forEach(p=>{const it=document.createElement('div'); it.className='item'; it.innerHTML=`<span>${new Date(p.t).toLocaleTimeString()} • ${p.pick}</span><b>${p.res} (${p.delta})</b>`; box.appendChild(it)})}
+function flushNotifs(){ const arr=(users[current].notifs||[]).slice().reverse(); let i=0; if(!arr.length) return; const iv=setInterval(()=>{ showToast(arr[i].msg); i++; if(i>=arr.length){ clearInterval(iv); users[current].notifs=[]; save(); } },2800) }
+
+function renderTopHist(){const box=topHist; box.innerHTML=''; (users[current].tops||[]).slice(0,10).forEach(t=>{const it=document.createElement('div'); it.className='item'; it.innerHTML=`<span>${new Date(t.t).toLocaleTimeString()}</span><b>+${t.amt}</b>`; box.appendChild(it)})}{const box=topHist; box.innerHTML=''; (users[current].tops||[]).slice(0,10).forEach(t=>{const it=document.createElement('div'); it.className='item'; it.innerHTML=`<span>${new Date(t.t).toLocaleTimeString()}</span><b>+${t.amt}</b>`; box.appendChild(it)})} • ${p.pick}</span><b>${p.res} (${p.delta})</b>`; box.appendChild(it)})}
+
+function openTopup(){topupModal.classList.remove('hidden')}
+function closeTopup(){topupModal.classList.add('hidden')}
+function sendRequest(){const amt=Number(reqAmount.value||0); if(amt<=0) return alert('Nominal tidak valid'); const r={u:current, amt, note:reqNote.value||'', t:Date.now()}; reqs.unshift(r); users[current].tops.unshift({t:r.t, amt}); save(); closeTopup(); alert('Request terkirim. Hubungi WA admin untuk proses.')}
+
+function renderReqs(){reqList.innerHTML=''; reqs.forEach((r,i)=>{const it=document.createElement('div'); it.className='item'; it.innerHTML=`<span>@${r.u} • ${r.amt}</span><button class='btn gray' onclick='approve(${i})'>SELESAI</button>`; reqList.appendChild(it)})}
+function approve(i){const r=reqs.splice(i,1)[0]; if(users[r.u]){users[r.u].saldo+=r.amt; users[r.u].tops.unshift({t:Date.now(), amt:r.amt});}
+  save(); renderReqs(); notifyUser(r.u, `Saldo masuk +${r.amt}`); alert('Top up poin selesai')}
+
+
+function topupAdmin(){const u=topUser.value.trim(), v=Number(topVal.value||0); if(!users[u]||v<=0) return alert('Data salah'); users[u].saldo+=v; users[u].tops.unshift({t:Date.now(), amt:v}); save(); notifyUser(u, `Saldo masuk +${v}`); alert('OK')}
+function notifyUser(u,msg){
+  if(!users[u].notifs) users[u].notifs=[];
+  users[u].notifs.unshift({t:Date.now(), msg});
+  save();
+  if(current===u){ showToast(msg); }
+}
+function showToast(msg){ toast.textContent=msg; toast.classList.remove('hidden'); setTimeout(()=>toast.classList.add('hidden'),2500) } }
+
+function setWR(){winRate=Number(wr.value||50); save(); alert('OK')}
+</script></body>
+</html>
